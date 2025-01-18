@@ -31,7 +31,7 @@ const App = () => {
   const loadCalendarsFromStorage = () => {
     const savedCalendars = localStorage.getItem('calendars');
     return savedCalendars ? JSON.parse(savedCalendars) : [
-      { id: 1, name: 'Default', emoji: '📅', color: '#4CAF50', locked: false, notes: {}, selectedDays: [], alert: false },
+      { id: 1, name: 'Default', emoji: '👣', color: '#4CAF50', locked: false, notes: {}, selectedDays: [], alert: false },
     ];
   };
 
@@ -48,7 +48,7 @@ const App = () => {
     const newCalendar = {
       id: Date.now(), // Unique ID for the new calendar
       name: 'New Calendar',
-      emoji: '📅',
+      emoji: '👣',
       color: '#4CAF50',
       locked: false,
       notes: {},
