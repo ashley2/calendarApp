@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { format, startOfMonth, endOfMonth, startOfWeek, addDays, isSameDay } from 'date-fns';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  addDays,
+  isSameDay,
+  subMonths,
+  addMonths,
+} from 'date-fns';
 
 const CalendarWrapper = styled.div`
   display: flex;
@@ -9,10 +18,29 @@ const CalendarWrapper = styled.div`
   width: 100%;
 `;
 
+const Navigation = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin: 10px 0;
+`;
+
 const MonthDisplay = styled.div`
   font-size: 1.5rem;
   font-weight: bold;
-  margin: 10px 0;
+`;
+
+const ArrowButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #4caf50;
+
+  &:hover {
+    color: #388e3c;
+  }
 `;
 
 const CalendarGrid = styled.div`
@@ -37,7 +65,6 @@ const Day = styled.div`
   align-items: center;
   border-radius: 5px;
   cursor: pointer;
-  position: relative;
 `;
 
 const Emoji = styled.span`
@@ -52,6 +79,16 @@ const Total = styled.div`
 const Calendar = ({ calendar, onUpdate }) => {
   const [selectedDays, setSelectedDays] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Navigate to previous month
+  const handlePreviousMonth = () => {
+    setCurrentDate(subMonths(currentDate, 1));
+  };
+
+  // Navigate to next month
+  const handleNextMonth = () => {
+    setCurrentDate(addMonths(currentDate, 1));
+  };
 
   // Generate dates for the current month
   const startOfTheMonth = startOfMonth(currentDate);
@@ -86,7 +123,13 @@ const Calendar = ({ calendar, onUpdate }) => {
 
   return (
     <CalendarWrapper>
-      <MonthDisplay>{monthName}</MonthDisplay>
+      {/* Navigation for Previous/Next Month */}
+      <Navigation>
+        <ArrowButton onClick={handlePreviousMonth}>←</ArrowButton>
+        <MonthDisplay>{monthName}</MonthDisplay>
+        <ArrowButton onClick={handleNextMonth}>→</ArrowButton>
+      </Navigation>
+
       <CalendarGrid>
         {/* Day headers */}
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
@@ -94,21 +137,25 @@ const Calendar = ({ calendar, onUpdate }) => {
         ))}
 
         {/* Days of the month */}
-        {days.map((day, index) => (
-          <Day
-            key={index}
-            selected={selectedDays.some((selectedDay) => isSameDay(selectedDay, day))}
-            color={calendar.color}
-            onClick={() => handleDayClick(day)}
-          >
-            {format(day, 'd')}
-            {selectedDays.some((selectedDay) => isSameDay(selectedDay, day)) && (
-              <Emoji>{calendar.emoji}</Emoji>
-            )}
-          </Day>
-        ))}
+        {days.map((day, index) => {
+          const isSelected = selectedDays.some((selectedDay) => isSameDay(selectedDay, day));
+          const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+          return (
+            <Day
+              key={index}
+              selected={isSelected}
+              color={calendar.color}
+              onClick={() => handleDayClick(day)}
+              style={{ opacity: isCurrentMonth ? 1 : 0.5 }}
+            >
+              {isSelected ? <Emoji>{calendar.emoji}</Emoji> : format(day, 'd')}
+            </Day>
+          );
+        })}
       </CalendarGrid>
-      <Total>Total Days Marked: {selectedDays.length}</Total>
+
+      {/* Total selected days */}
+      <Total>Total days selected: {selectedDays.length}</Total>
     </CalendarWrapper>
   );
 };
