@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Calendar from './calendar';
 import CalendarMenu from './calendarMenu';
@@ -27,19 +27,21 @@ const Tab = styled.button`
 `;
 
 const App = () => {
-  const [calendars, setCalendars] = useState([
-    {
-      id: 1,
-      name: 'Default',
-      emoji: '📅',
-      color: '#4CAF50',
-      locked: false,
-      notes: {},
-      selectedDays: [],
-      alert: false,
-    },
-  ]);
+  // Load initial state from localStorage, if available
+  const loadCalendarsFromStorage = () => {
+    const savedCalendars = localStorage.getItem('calendars');
+    return savedCalendars ? JSON.parse(savedCalendars) : [
+      { id: 1, name: 'Default', emoji: '📅', color: '#4CAF50', locked: false, notes: {}, selectedDays: [], alert: false },
+    ];
+  };
+
+  const [calendars, setCalendars] = useState(loadCalendarsFromStorage());
   const [activeTab, setActiveTab] = useState(1);
+
+  // Save calendars to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('calendars', JSON.stringify(calendars));
+  }, [calendars]);
 
   // Add a new calendar
   const handleAddCalendar = () => {
@@ -80,7 +82,7 @@ const App = () => {
         ))}
         <Tab onClick={handleAddCalendar}>+ Add Calendar</Tab>
       </TabsContainer>
-      
+
       {/* Pass the active calendar's data and update/delete functions to the CalendarMenu */}
       <CalendarMenu
         calendar={calendars.find((cal) => cal.id === activeTab)}
