@@ -28,32 +28,45 @@ const Tab = styled.button`
 
 const App = () => {
   const [calendars, setCalendars] = useState([
-    { id: 1, name: 'Default', emoji: '📅', color: '#4CAF50', locked: false, notes: {}, alert: false },
+    {
+      id: 1,
+      name: 'Default',
+      emoji: '📅',
+      color: '#4CAF50',
+      locked: false,
+      notes: {},
+      selectedDays: [],
+      alert: false,
+    },
   ]);
   const [activeTab, setActiveTab] = useState(1);
 
+  // Add a new calendar
   const handleAddCalendar = () => {
     const newCalendar = {
-      id: Date.now(),
+      id: Date.now(), // Unique ID for the new calendar
       name: 'New Calendar',
       emoji: '📅',
       color: '#4CAF50',
       locked: false,
       notes: {},
+      selectedDays: [],
       alert: false,
     };
     setCalendars([...calendars, newCalendar]);
-    setActiveTab(newCalendar.id);
+    setActiveTab(newCalendar.id); // Set new calendar as the active one
   };
 
+  // Update a specific calendar's data
   const handleUpdateCalendar = (id, updatedCalendar) => {
     setCalendars(calendars.map((cal) => (cal.id === id ? { ...cal, ...updatedCalendar } : cal)));
   };
 
+  // Delete a calendar
   const handleDeleteCalendar = (id) => {
     setCalendars(calendars.filter((cal) => cal.id !== id));
     if (activeTab === id && calendars.length > 1) {
-      setActiveTab(calendars[0].id);
+      setActiveTab(calendars[0].id); // Set first calendar as active if the current one is deleted
     }
   };
 
@@ -67,14 +80,20 @@ const App = () => {
         ))}
         <Tab onClick={handleAddCalendar}>+ Add Calendar</Tab>
       </TabsContainer>
+      
+      {/* Pass the active calendar's data and update/delete functions to the CalendarMenu */}
       <CalendarMenu
         calendar={calendars.find((cal) => cal.id === activeTab)}
         onUpdate={handleUpdateCalendar}
         onDelete={handleDeleteCalendar}
       />
+      
+      {/* Pass the active calendar's data, selectedDays, and notes to the Calendar */}
       <Calendar
         calendar={calendars.find((cal) => cal.id === activeTab)}
         onUpdate={handleUpdateCalendar}
+        selectedDays={calendars.find((cal) => cal.id === activeTab).selectedDays}
+        notes={calendars.find((cal) => cal.id === activeTab).notes}
       />
     </AppContainer>
   );

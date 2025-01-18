@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import {
   format,
@@ -11,6 +11,7 @@ import {
   addMonths,
 } from 'date-fns';
 
+// Styled components for the calendar UI
 const CalendarWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -76,9 +77,8 @@ const Total = styled.div`
   font-weight: bold;
 `;
 
-const Calendar = ({ calendar, onUpdate }) => {
-  const [selectedDays, setSelectedDays] = useState([]);
-  const [currentDate, setCurrentDate] = useState(new Date());
+const Calendar = ({ calendar, onUpdate, selectedDays, notes }) => {
+  const [currentDate, setCurrentDate] = React.useState(new Date());
 
   // Navigate to previous month
   const handlePreviousMonth = () => {
@@ -90,7 +90,7 @@ const Calendar = ({ calendar, onUpdate }) => {
     setCurrentDate(addMonths(currentDate, 1));
   };
 
-  // Generate dates for the current month
+  // Generate the days for the current month
   const startOfTheMonth = startOfMonth(currentDate);
   const endOfTheMonth = endOfMonth(currentDate);
   const startDate = startOfWeek(startOfTheMonth, { weekStartsOn: 0 });
@@ -104,8 +104,9 @@ const Calendar = ({ calendar, onUpdate }) => {
     day = addDays(day, 1);
   }
 
+  // Handle day selection/deselection
   const handleDayClick = (day) => {
-    if (calendar.locked) return;
+    if (calendar.locked) return; // Don't allow changes if locked
 
     const isSelected = selectedDays.some((selectedDay) => isSameDay(selectedDay, day));
 
@@ -113,17 +114,18 @@ const Calendar = ({ calendar, onUpdate }) => {
       ? selectedDays.filter((selectedDay) => !isSameDay(selectedDay, day))
       : [...selectedDays, day];
 
-    setSelectedDays(updatedDays);
+    // Update the selected days and add notes for that day
     onUpdate(calendar.id, {
-      notes: { ...calendar.notes, [format(day, 'yyyy-MM-dd')]: calendar.emoji },
+      selectedDays: updatedDays,
+      notes: { ...notes, [format(day, 'yyyy-MM-dd')]: calendar.emoji },
     });
   };
 
+  // Format the current month name
   const monthName = format(currentDate, 'MMMM yyyy');
 
   return (
     <CalendarWrapper>
-      {/* Navigation for Previous/Next Month */}
       <Navigation>
         <ArrowButton onClick={handlePreviousMonth}>←</ArrowButton>
         <MonthDisplay>{monthName}</MonthDisplay>
@@ -154,7 +156,6 @@ const Calendar = ({ calendar, onUpdate }) => {
         })}
       </CalendarGrid>
 
-      {/* Total selected days */}
       <Total>Total days selected: {selectedDays.length}</Total>
     </CalendarWrapper>
   );
