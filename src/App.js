@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Calendar from './calendar';
-import CalendarMenu from './calendarMenu';
 
 const AppContainer = styled.div`
   font-family: Arial, sans-serif;
@@ -26,77 +25,142 @@ const Tab = styled.button`
   color: ${(props) => (props.active ? 'white' : 'black')};
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+`;
+
+const Input = styled.input`
+  width: 80%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+`;
+
+const SaveButton = styled.button`
+  background: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background: #388e3c;
+  }
+`;
+
+const loadCalendarsFromStorage = () => {
+  const savedCalendars = localStorage.getItem('calendars');
+  return savedCalendars ? JSON.parse(savedCalendars) : [];
+};
+
 const App = () => {
-  // Load initial state from localStorage, if available
-  const loadCalendarsFromStorage = () => {
-    const savedCalendars = localStorage.getItem('calendars');
-    return savedCalendars ? JSON.parse(savedCalendars) : [
-      { id: 1, name: 'Default', emoji: '👣', color: '#4CAF50', locked: false, notes: {}, selectedDays: [], alert: false },
-    ];
-  };
-
   const [calendars, setCalendars] = useState(loadCalendarsFromStorage());
-  const [activeTab, setActiveTab] = useState(1);
+  const [activeTab, setActiveTab] = useState(calendars[0]?.id || null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newName, setNewName] = useState('');
 
-  // Save calendars to localStorage whenever they change
   useEffect(() => {
+    // Save calendars to local storage when they change
     localStorage.setItem('calendars', JSON.stringify(calendars));
   }, [calendars]);
 
-  // Add a new calendar
+  // Ensure the calendar state is updated correctly when a change happens
+  const handleUpdateCalendar = (updatedCalendar) => {
+    setCalendars((prevCalendars) =>
+      prevCalendars.map((cal) =>
+        cal.id === updatedCalendar.id ? updatedCalendar : cal
+      )
+    );
+  };
+
   const handleAddCalendar = () => {
     const newCalendar = {
-      id: Date.now(), // Unique ID for the new calendar
+      id: Date.now(),
       name: 'New Calendar',
       emoji: '👣',
       color: '#4CAF50',
       locked: false,
       notes: {},
       selectedDays: [],
-      alert: false,
     };
     setCalendars([...calendars, newCalendar]);
-    setActiveTab(newCalendar.id); // Set new calendar as the active one
+    setActiveTab(newCalendar.id);
   };
 
-  // Update a specific calendar's data
-  const handleUpdateCalendar = (id, updatedCalendar) => {
-    setCalendars(calendars.map((cal) => (cal.id === id ? { ...cal, ...updatedCalendar } : cal)));
+  const handleOpenModal = (id) => {
+    setActiveTab(id);
+    setNewName(calendars.find((cal) => cal.id === id).name);
+    setIsModalOpen(true);
   };
 
-  // Delete a calendar
-  const handleDeleteCalendar = (id) => {
-    setCalendars(calendars.filter((cal) => cal.id !== id));
-    if (activeTab === id && calendars.length > 1) {
-      setActiveTab(calendars[0].id); // Set first calendar as active if the current one is deleted
-    }
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setNewName(''); // Clear the input field when closing the modal
+  };
+
+  const handleSaveName = () => {
+    setCalendars(
+      calendars.map((cal) =>
+        cal.id === activeTab ? { ...cal, name: newName } : cal
+      )
+    );
+    handleCloseModal();
   };
 
   return (
     <AppContainer>
       <TabsContainer>
         {calendars.map((cal) => (
-          <Tab key={cal.id} active={cal.id === activeTab} onClick={() => setActiveTab(cal.id)}>
+          <Tab
+            key={cal.id}
+            active={cal.id === activeTab}
+            onDoubleClick={() => handleOpenModal(cal.id)}
+            onClick={() => setActiveTab(cal.id)}
+          >
             {cal.name}
           </Tab>
         ))}
         <Tab onClick={handleAddCalendar}>+ Add Calendar</Tab>
       </TabsContainer>
 
-      {/* Pass the active calendar's data and update/delete functions to the CalendarMenu */}
-      <CalendarMenu
-        calendar={calendars.find((cal) => cal.id === activeTab)}
-        onUpdate={handleUpdateCalendar}
-        onDelete={handleDeleteCalendar}
-      />
-      
-      {/* Pass the active calendar's data, selectedDays, and notes to the Calendar */}
-      <Calendar
-        calendar={calendars.find((cal) => cal.id === activeTab)}
-        onUpdate={handleUpdateCalendar}
-        selectedDays={calendars.find((cal) => cal.id === activeTab).selectedDays}
-        notes={calendars.find((cal) => cal.id === activeTab).notes}
-      />
+      {calendars.length > 0 && (
+        <Calendar
+          key={activeTab} // Ensure it's correctly keyed so React knows when it needs to re-render
+          calendar={calendars.find((cal) => cal.id === activeTab)}
+          onUpdate={handleUpdateCalendar}
+        />
+      )}
+
+      {isModalOpen && (
+        <ModalOverlay onClick={handleCloseModal}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <h2>Rename Calendar</h2>
+            <Input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+            />
+            <SaveButton onClick={handleSaveName}>Save</SaveButton>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </AppContainer>
   );
 };

@@ -5,13 +5,6 @@ const Menu = styled.div`
   margin-bottom: 20px;
 `;
 
-const Input = styled.input`
-  padding: 5px;
-  margin: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-`;
-
 const ColorPicker = styled.input`
   margin: 5px;
 `;
@@ -27,17 +20,15 @@ const Button = styled.button`
 `;
 
 const CalendarMenu = ({ calendar, onUpdate, onDelete }) => {
-  const [name, setName] = useState(calendar.name);
   const [color, setColor] = useState(calendar.color);
 
   const handleUpdate = () => {
-    onUpdate(calendar.id, { name, color });
+    onUpdate(calendar.id, { color });
   };
 
   return (
     <Menu>
       <div>
-        <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={handleUpdate} />
         <ColorPicker
           type="color"
           value={color}

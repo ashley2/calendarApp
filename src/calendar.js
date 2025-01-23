@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import {
   format,
@@ -11,7 +11,6 @@ import {
   addMonths,
 } from 'date-fns';
 
-// Styled components for the calendar UI
 const CalendarWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -77,8 +76,61 @@ const Total = styled.div`
   font-weight: bold;
 `;
 
-const Calendar = ({ calendar, onUpdate, selectedDays, notes }) => {
-  const [currentDate, setCurrentDate] = React.useState(new Date());
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+`;
+
+const Input = styled.input`
+  width: 80%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+`;
+
+const SaveButton = styled.button`
+  background: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+
+  &:hover {
+    background: #388e3c;
+  }
+`;
+
+const saveCalendarsToStorage = (calendars) => {
+  localStorage.setItem('calendars', JSON.stringify(calendars));
+};
+
+const Calendar = ({ calendar, onUpdate }) => {
+  const [selectedDays, setSelectedDays] = useState(calendar.selectedDays || []);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newName, setNewName] = useState(calendar.name);
+
+  useEffect(() => {
+    saveCalendarsToStorage(calendar);
+  }, [calendar]);
 
   // Navigate to previous month
   const handlePreviousMonth = () => {
@@ -90,7 +142,7 @@ const Calendar = ({ calendar, onUpdate, selectedDays, notes }) => {
     setCurrentDate(addMonths(currentDate, 1));
   };
 
-  // Generate the days for the current month
+  // Generate dates for the current month
   const startOfTheMonth = startOfMonth(currentDate);
   const endOfTheMonth = endOfMonth(currentDate);
   const startDate = startOfWeek(startOfTheMonth, { weekStartsOn: 0 });
@@ -104,28 +156,41 @@ const Calendar = ({ calendar, onUpdate, selectedDays, notes }) => {
     day = addDays(day, 1);
   }
 
-  // Handle day selection/deselection
   const handleDayClick = (day) => {
-    if (calendar.locked) return; // Don't allow changes if locked
-
+    if (calendar.locked) return;
+  
     const isSelected = selectedDays.some((selectedDay) => isSameDay(selectedDay, day));
-
+  
     const updatedDays = isSelected
       ? selectedDays.filter((selectedDay) => !isSameDay(selectedDay, day))
       : [...selectedDays, day];
-
-    // Update the selected days and add notes for that day
-    onUpdate(calendar.id, {
+  
+    setSelectedDays(updatedDays);
+  
+    // Update the selectedDays in the calendar state and notify the parent
+    onUpdate({
+      ...calendar,
       selectedDays: updatedDays,
-      notes: { ...notes, [format(day, 'yyyy-MM-dd')]: calendar.emoji },
+      notes: { ...calendar.notes, [format(day, 'yyyy-MM-dd')]: calendar.emoji },
     });
   };
+  
+  
 
-  // Format the current month name
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleSaveName = () => {
+    onUpdate(calendar.id, { ...calendar, name: newName });
+    handleCloseModal();
+  };
+
   const monthName = format(currentDate, 'MMMM yyyy');
 
   return (
     <CalendarWrapper>
+      {/* Navigation for Previous/Next Month */}
       <Navigation>
         <ArrowButton onClick={handlePreviousMonth}>←</ArrowButton>
         <MonthDisplay>{monthName}</MonthDisplay>
@@ -156,7 +221,23 @@ const Calendar = ({ calendar, onUpdate, selectedDays, notes }) => {
         })}
       </CalendarGrid>
 
+      {/* Total selected days */}
       <Total>Total days selected: {selectedDays.length}</Total>
+
+      {/* Rename Calendar Modal */}
+      {isModalOpen && (
+        <ModalOverlay onClick={handleCloseModal}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <h2>Rename Calendar</h2>
+            <Input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+            />
+            <SaveButton onClick={handleSaveName}>Save</SaveButton>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </CalendarWrapper>
   );
 };
